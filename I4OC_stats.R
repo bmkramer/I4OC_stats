@@ -50,19 +50,31 @@ extractData_all <- function(x){
                                  list("counts",
                                       "current-dois"),
                                  .default = 0),
+    count_backfile_type = map_dbl(x, 
+                                 list("counts",
+                                      "backfile-dois"),
+                                 .default = 0),
     deposits_references_current = map_lgl(x,
                                          list("flags",
                                               "deposits-references-current"),
                                          .default = NA),
+    deposits_references_backfile = map_lgl(x,
+                                          list("flags",
+                                               "deposits-references-backfile"),
+                                          .default = NA),
     references_current_type = map(x,
+                                  list("coverage",
+                                       "references-current"),
+                                  .default = 0),
+    references_backfile_type = map(x,
                                  list("coverage",
-                                      "references-current"),
+                                      "references-backfile"),
                                  .default = 0)) %>%
     #keep only members with (current) output of type
-    filter(count_current_type > 0) %>%
+    #filter(count_current_type > 0) %>%
     #convert reference coverage into numerical, then percentage
     mutate(references_current_type = as.double(references_current_type),
-           references_current_type = round(references_current_type, 3)) %>%
+           references_backfile_type = as.double(references_backfile_type)) %>%
     #arrange in descending order of count
     arrange(desc(count_current_type))
   
@@ -80,20 +92,36 @@ extractData_type <- function(x, type){
                                       "current",
                                       type),
                                  .default = 0),
+    count_backfile_type = map_dbl(x, 
+                                 list("counts-type",
+                                      "backfile",
+                                      type),
+                                 .default = 0),
     deposits_references_current = map_lgl(x,
                                          list("flags",
                                               "deposits-references-current"),
                                          .default = NA),
+    deposits_references_backfile = map_lgl(x,
+                                          list("flags",
+                                               "deposits-references-backfile"),
+                                          .default = NA),
     references_current_type = map(x,
+                                  list("coverage-type",
+                                       "current", 
+                                       type,
+                                       "references"),
+                                  .default = 0),
+    references_backfile_type = map(x,
                                  list("coverage-type",
-                                      "current", 
+                                      "backfile", 
                                       type,
                                       "references"),
                                  .default = 0)) %>%
     #keep only members with (current) output of type
-    filter(count_current_type > 0) %>%
-    #convert abstract coverage into numerical
-    mutate(references_current_type = as.double(references_current_type)) %>%
+    #filter(count_current_type > 0) %>%
+    ##convert abstract coverage into numerical
+    mutate(references_current_type = as.double(references_current_type),
+           references_backfile_type = as.double(references_backfile_type)) %>%
     #arrange in descending order of count
     arrange(desc(count_current_type))
   
@@ -102,7 +130,7 @@ extractData_type <- function(x, type){
 
 #define function to write to csv
 toFile <- function(type, data, path){
-  filename <- paste0(path,"/crossref_member_references_current_", type, "_", date,".csv")
+  filename <- paste0(path,"/crossref_member_references_", type, "_", date,".csv")
   write_csv(data, filename)
 }
 
@@ -115,6 +143,9 @@ date <- Sys.Date()
 path <- file.path("data",date) 
 dir.create(path)
 
+#set cutoff for percentage of references
+cutoff_current <- 0.75
+cutoff_backfile <- 0.25
 
 #get number of members
 res <- cr_members(limit=0)
@@ -146,3 +177,15 @@ toFile(type, data, path)
 type = "book-chapter"
 data <- extractData_type(res, type)
 toFile(type, data, path)
+
+type = "proceedings-article"
+data <- extractData_type(res, type)
+toFile(type, data, path)
+
+type = "proceedings"
+data <- extractData_type(res, type)
+toFile(type, data, path)
+
+
+#aggregate counts per type
+
