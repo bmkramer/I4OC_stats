@@ -148,10 +148,6 @@ date <- Sys.Date()
 path <- file.path("data",date) 
 dir.create(path)
 
-#set cutoff for percentage of references
-cutoff_current <- 0.75
-cutoff_backfile <- 0.25
-
 #get number of members
 res <- cr_members(limit=0)
 total <- res$meta$total_results
@@ -191,6 +187,4 @@ type = "proceedings"
 data <- extractData_type(res, type)
 toFile(type, data, path)
 
-
-#aggregate counts per type
 
